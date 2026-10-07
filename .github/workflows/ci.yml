@@ -1,5 +1,5 @@
-# Checks every push and pull request: formatting, and the tests in the iOS Simulator (Adjust's SDK
-# builds for iOS only).
+# Checks every push and pull request: formatting, the public API against the latest release, and
+# the tests in the iOS Simulator (Adjust's SDK builds for iOS only).
 name: CI
 
 on:
@@ -24,3 +24,13 @@ jobs:
         run: |
           device=$(scripts/simulator.sh)
           xcodebuild test -scheme herald-ios-adjust -destination "id=$device" -quiet
+
+  api:
+    runs-on: macos-26
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0  # the tags, to find the latest release
+
+      - name: No accidental breaking changes
+        run: scripts/check-api.sh
