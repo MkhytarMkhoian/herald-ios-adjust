@@ -1,7 +1,4 @@
 # Change Log
 
-## Version 1.0.0
-
-_Unreleased_
-
- * New: `HeraldAdjust` sends events, revenue and ad revenue to Adjust, using Adjust 5.
+All Herald for iOS packages share one version, and one change log covers them all: see
+[herald-ios's change log](https://github.com/MkhytarMkhoian/herald-ios/blob/main/CHANGELOG.md).

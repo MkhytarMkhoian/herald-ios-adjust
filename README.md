@@ -10,7 +10,8 @@ In Xcode, File → Add Package Dependencies, and add both packages:
 - `https://github.com/MkhytarMkhoian/herald-ios`, for `HeraldCore`;
 - `https://github.com/MkhytarMkhoian/herald-ios-adjust`, for `HeraldAdjust`.
 
-It works with Adjust 5, and needs iOS 15 or newer.
+It works with Adjust 5, and needs iOS 15 or newer. All Herald for iOS
+packages share one version, so use the same one for `herald-ios`.
 
 ## Set up
 

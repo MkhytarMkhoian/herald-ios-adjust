@@ -1,0 +1,26 @@
+# Checks every push and pull request: formatting, and the tests in the iOS Simulator (Adjust's SDK
+# builds for iOS only).
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    runs-on: macos-26
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Formatting
+        run: swift format lint --strict -r Sources Tests Package.swift
+
+      - name: Tests in the iOS Simulator
+        run: |
+          device=$(scripts/simulator.sh)
+          xcodebuild test -scheme herald-ios-adjust -destination "id=$device" -quiet
