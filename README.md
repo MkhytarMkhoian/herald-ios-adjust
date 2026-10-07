@@ -1,5 +1,8 @@
 # Herald for Adjust
 
+[![Swift versions](https://img.shields.io/endpoint?url=https%3A%2F%2Fswiftpackageindex.com%2Fapi%2Fpackages%2FMkhytarMkhoian%2Fherald-ios-adjust%2Fbadge%3Ftype%3Dswift-versions)](https://swiftpackageindex.com/MkhytarMkhoian/herald-ios-adjust)
+[![Platforms](https://img.shields.io/endpoint?url=https%3A%2F%2Fswiftpackageindex.com%2Fapi%2Fpackages%2FMkhytarMkhoian%2Fherald-ios-adjust%2Fbadge%3Ftype%3Dplatforms)](https://swiftpackageindex.com/MkhytarMkhoian/herald-ios-adjust)
+
 Sends [Herald](https://github.com/MkhytarMkhoian/herald-ios) events, revenue and ad revenue to
 Adjust, over the [Adjust iOS SDK](https://github.com/adjust/ios_sdk).
 
