@@ -1,5 +1,7 @@
-# Swift Package Index builds the API reference for this module.
+# Swift Package Index builds the API reference for this module. Adjust has no macOS SDK, so it
+# builds on iOS.
 version: 1
 builder:
   configs:
     - documentation_targets: [HeraldAdjust]
+      platform: ios
