@@ -1,30 +1,64 @@
 import HeraldCore
 
-/// Claims every event whose name has a dashboard token in `tokens`, and declines the rest.
+/// The Adjust dashboard token for events of one type, or of a subclass of it:
+/// `AdjustToken(SignUpCompleted.self, "abc123")`.
+public struct AdjustToken: Sendable {
+    let token: String
+    let eventTypeName: String
+    let eventTypeID: ObjectIdentifier
+    private let isMatch: @Sendable (any Event) -> Bool
+
+    public init<E: Event>(_ eventType: E.Type, _ token: String) {
+        self.token = token
+        eventTypeName = String(describing: eventType)
+        eventTypeID = ObjectIdentifier(eventType)
+        isMatch = { $0 is E }
+    }
+
+    func matches(_ event: any Event) -> Bool {
+        isMatch(event)
+    }
+}
+
+/// Sends each event that has a token in `tokens` under that token, and declines the rest:
 ///
-/// Adjust only knows events created in its dashboard, so there is no generic event factory: an
-/// event without a token isn't sent. One token per event; for an event that should count as
-/// several Adjust events, write a factory that answers with several ``TokenAdjustEventTracker``s
-/// and put it before this one.
+/// ```swift
+/// TokenAdjustEventTrackerFactory(tokens: [AdjustToken(SignUpCompleted.self, "abc123")])
+/// ```
+///
+/// Events are matched by type, not by name, so a renamed event keeps its token. A type listed
+/// twice stops the app at start-up.
+///
+/// One token per event; for an event that should count as several Adjust events, write a factory
+/// that answers with several ``TokenAdjustEventTracker``s and put it before this one.
 public struct TokenAdjustEventTrackerFactory: AdjustEventTrackerFactory {
-    private let tokens: [String: String]
+    private let tokens: [AdjustToken]
     private let sdk: any AdjustSDK
 
-    public init(tokens: [String: String]) {
+    public init(tokens: [AdjustToken]) {
         self.init(tokens: tokens, sdk: LiveAdjustSDK())
     }
 
-    init(tokens: [String: String], sdk: any AdjustSDK) {
+    init(tokens: [AdjustToken], sdk: any AdjustSDK) {
+        if let repeated = repeatedEventType(in: tokens) {
+            preconditionFailure("\(repeated) has two Adjust tokens. Give each event one token.")
+        }
         self.tokens = tokens
         self.sdk = sdk
     }
 
     public func create(_ event: any Event) -> Resolution<any AdjustEventTracker> {
-        guard let token = tokens[event.name] else {
+        guard let match = tokens.first(where: { $0.matches(event) }) else {
             return .declined
         }
-        return .claimed([TokenAdjustEventTracker(event: event, eventToken: token, sdk: sdk)])
+        return .claimed([TokenAdjustEventTracker(event: event, eventToken: match.token, sdk: sdk)])
     }
+}
+
+/// The name of the first event type listed twice, if any.
+func repeatedEventType(in tokens: [AdjustToken]) -> String? {
+    var seen: Set<ObjectIdentifier> = []
+    return tokens.first { !seen.insert($0.eventTypeID).inserted }?.eventTypeName
 }
 
 /// Adds any property as a global callback parameter. Adjust has no user profile, so this covers

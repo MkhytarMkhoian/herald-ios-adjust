@@ -6,8 +6,8 @@ import HeraldCore
 /// ```swift
 /// let tracker = AdjustAnalyticsTrackerService(
 ///     eventTrackerFactory: TokenAdjustEventTrackerFactory(tokens: [
-///         "checkout_started": "abc123",  // tokens from the Adjust dashboard
-///         "sign_up": "def456",
+///         AdjustToken(CheckoutStarted.self, "abc123"),  // tokens from the Adjust dashboard
+///         AdjustToken(SignUpCompleted.self, "def456"),
 ///     ]),
 ///     propertySetterFactory: GenericAdjustPropertySetterFactory()
 /// )

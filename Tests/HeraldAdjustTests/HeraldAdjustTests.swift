@@ -75,6 +75,16 @@ import Testing
 }
 
 /// A purchase, as an app describes it.
+private struct SignUpCompleted: Event {
+    var name: String { "sign_up_completed" }
+}
+
+private class ScreenTapped: Event, @unchecked Sendable {
+    var name: String { "screen_tapped" }
+}
+
+private final class PromoTapped: ScreenTapped, @unchecked Sendable {}
+
 private struct PurchaseCompleted: Event {
     let price: Double
     var name: String { "purchase_completed" }
@@ -97,33 +107,65 @@ private struct PurchaseAdjustEventTrackerFactory: AdjustEventTrackerFactory {
 @Suite struct Factories {
     let adjust = RecordingAdjustSDK()
 
-    @Test func theTokenFactoryClaimsMappedEventsAndDeclinesTheRest() throws {
-        let tracker = AdjustAnalyticsTrackerService(
-            eventTrackerFactory: TokenAdjustEventTrackerFactory(
-                tokens: ["sign_up": "abc123"], sdk: adjust),
-            propertySetterFactory: GenericAdjustPropertySetterFactory(sdk: adjust)
-        )
-        let herald = Herald(providers: [HeraldProvider(name: "adjust", events: tracker)])
+    @Test func theTokenFactorySendsAnEventOfAListedTypeUnderItsToken() throws {
+        let factory = TokenAdjustEventTrackerFactory(
+            tokens: [AdjustToken(SignUpCompleted.self, "abc123")], sdk: adjust)
 
-        herald.track(TestEvent(name: "sign_up"))
-        herald.track(TestEvent(name: "cart_viewed"))
+        try factory.create(SignUpCompleted()).handlers().first?.track()
 
         #expect(adjust.calls.count == 1)
         #expect(adjust.calls.first?.hasPrefix("trackEvent abc123") == true)
+    }
+
+    @Test func theTokenFactoryMatchesByTypeNotByName() throws {
+        let factory = TokenAdjustEventTrackerFactory(
+            tokens: [AdjustToken(SignUpCompleted.self, "abc123")], sdk: adjust)
+
+        #expect(try factory.create(TestEvent(name: "sign_up_completed")).handlers().isEmpty)
+    }
+
+    @Test func theTokenFactoryGivesEachListedTypeItsOwnToken() throws {
+        let factory = TokenAdjustEventTrackerFactory(
+            tokens: [
+                AdjustToken(SignUpCompleted.self, "abc123"), AdjustToken(TestEvent.self, "def456"),
+            ], sdk: adjust)
+
+        try factory.create(TestEvent(name: "search_tapped")).handlers().first?.track()
+
+        #expect(adjust.calls.first?.hasPrefix("trackEvent def456") == true)
+    }
+
+    @Test func theTokenFactorySendsASubclassOfAListedClassUnderItsToken() throws {
+        let factory = TokenAdjustEventTrackerFactory(
+            tokens: [AdjustToken(ScreenTapped.self, "abc123")], sdk: adjust)
+
+        #expect(try factory.create(PromoTapped()).handlers().count == 1)
+    }
+
+    @Test func aTypeListedTwiceIsFound() {
+        #expect(
+            repeatedEventType(in: [
+                AdjustToken(SignUpCompleted.self, "a"), AdjustToken(TestEvent.self, "b"),
+            ]) == nil)
+        let repeated = repeatedEventType(in: [
+            AdjustToken(SignUpCompleted.self, "a"), AdjustToken(SignUpCompleted.self, "b"),
+        ])
+        #expect(repeated == "SignUpCompleted")
     }
 
     @Test func aCustomFactoryBeforeTheTokenFactorySendsPurchases() {
         let tracker = AdjustAnalyticsTrackerService(
             eventTrackerFactory: CompositeAdjustEventTrackerFactory([
                 PurchaseAdjustEventTrackerFactory(sdk: adjust),
-                TokenAdjustEventTrackerFactory(tokens: ["sign_up": "abc123"], sdk: adjust),
+                TokenAdjustEventTrackerFactory(
+                    tokens: [AdjustToken(SignUpCompleted.self, "abc123")], sdk: adjust),
             ]),
             propertySetterFactory: GenericAdjustPropertySetterFactory(sdk: adjust)
         )
         let herald = Herald(providers: [HeraldProvider(name: "adjust", events: tracker)])
 
         herald.track(PurchaseCompleted(price: 4.99))
-        herald.track(TestEvent(name: "sign_up"))
+        herald.track(SignUpCompleted())
 
         #expect(
             adjust.calls == [
@@ -136,7 +178,7 @@ private struct PurchaseAdjustEventTrackerFactory: AdjustEventTrackerFactory {
         let failures = ReportedFailures()
         let tracker = AdjustAnalyticsTrackerService(
             eventTrackerFactory: CompositeAdjustEventTrackerFactory([
-                TokenAdjustEventTrackerFactory(tokens: [:], sdk: adjust),
+                TokenAdjustEventTrackerFactory(tokens: [], sdk: adjust),
                 RequireMappedAdjustEventTrackerFactory(),
             ]),
             propertySetterFactory: RequireMappedAdjustPropertySetterFactory()

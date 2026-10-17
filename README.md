@@ -33,8 +33,8 @@ guard let config = ADJConfig(appToken: "<app token>", environment: ADJEnvironmen
 
 let tracker = AdjustAnalyticsTrackerService(
     eventTrackerFactory: TokenAdjustEventTrackerFactory(tokens: [
-        "checkout_started": "abc123",  // tokens from the Adjust dashboard
-        "sign_up": "def456",
+        AdjustToken(CheckoutStarted.self, "abc123"),  // tokens from the Adjust dashboard
+        AdjustToken(SignUpCompleted.self, "def456"),
     ]),
     propertySetterFactory: GenericAdjustPropertySetterFactory()
 )
@@ -51,7 +51,7 @@ let provider = HeraldProvider(
 ```
 
 Adjust only knows events created in its dashboard, so events reach it through their tokens: an
-event without a token isn't sent.
+event without a token isn't sent. Events are matched by type, not by name, so a renamed event keeps its token.
 
 | Herald | Adjust |
 | --- | --- |
