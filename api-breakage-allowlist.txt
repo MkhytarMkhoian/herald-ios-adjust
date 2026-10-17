@@ -1,1 +1,0 @@
-API breakage: constructor TokenAdjustEventTrackerFactory.init(tokens:) has parameter 0 type change from [Swift.String : Swift.String] to [HeraldAdjust.AdjustToken]
